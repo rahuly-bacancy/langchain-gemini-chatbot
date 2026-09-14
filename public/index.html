@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Gemini RAG Chatbot</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      background: #f5f7fb;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      padding: 20px;
+    }
+
+    /* ================================
+       Main Container
+       ================================ */
+
+    .chat-container {
+      width: 100%;
+      max-width: 900px;
+      height: min(850px, 95vh);
+
+      background: #ffffff;
+
+      border-radius: 16px;
+
+      box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.12);
+
+      display: flex;
+      flex-direction: column;
+
+      overflow: hidden;
+    }
+
+    /* ================================
+       Header
+       ================================ */
+
+    .chat-header {
+      background: #4285f4;
+      color: white;
+
+      padding: 16px 20px;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 15px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 3px;
+    }
+
+    .clear-button {
+      border: 1px solid rgba(255, 255, 255, 0.6);
+
+      background: transparent;
+      color: white;
+
+      padding: 8px 12px;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+      font-size: 13px;
+
+      white-space: nowrap;
+    }
+
+    .clear-button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* ================================
+       Settings
+       ================================ */
+
+    .settings {
+      background: #f8f9fc;
+
+      border-bottom: 1px solid #e2e5ea;
+
+      padding: 12px 20px;
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(4, 1fr);
+
+      gap: 12px;
+    }
+
+    .setting {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .setting label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .setting input {
+      width: 100%;
+
+      padding: 7px 8px;
+
+      border: 1px solid #ccc;
+
+      border-radius: 6px;
+
+      font-size: 13px;
+
+      outline: none;
+    }
+
+    .setting input:focus {
+      border-color: #4285f4;
+    }
+
+    /* ================================
+       Messages
+       ================================ */
+
+    .chat-messages {
+      flex: 1;
+
+      padding: 20px;
+
+      overflow-y: auto;
+
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      display: flex;
+
+      margin-bottom: 16px;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.bot {
+      justify-content: flex-start;
+    }
+
+    .message-content {
+      max-width: 75%;
+
+      padding: 12px 15px;
+
+      border-radius: 14px;
+
+      line-height: 1.55;
+
+      font-size: 15px;
+
+      white-space: pre-wrap;
+
+      overflow-wrap: break-word;
+    }
+
+    .user .message-content {
+      background: #4285f4;
+
+      color: white;
+
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot .message-content {
+      background: #eeeeee;
+
+      color: #222;
+
+      border-bottom-left-radius: 4px;
+    }
+
+    /* ================================
+       Sources
+       ================================ */
+
+    .sources {
+      max-width: 75%;
+
+      margin-top: 7px;
+
+      padding: 8px 10px;
+
+      background: #f8f9fa;
+
+      border-left: 3px solid #4285f4;
+
+      border-radius: 5px;
+
+      font-size: 12px;
+
+      color: #666;
+    }
+
+    .sources-title {
+      font-weight: bold;
+
+      margin-bottom: 4px;
+
+      color: #444;
+    }
+
+    .source-item {
+      margin-top: 3px;
+    }
+
+    /* ================================
+       Typing indicator
+       ================================ */
+
+    .typing {
+      color: #777;
+
+      font-style: italic;
+    }
+
+    /* ================================
+       Input
+       ================================ */
+
+    .chat-input {
+      display: flex;
+
+      padding: 15px 20px;
+
+      border-top: 1px solid #ddd;
+
+      gap: 10px;
+
+      background: white;
+    }
+
+    .chat-input input {
+      flex: 1;
+
+      min-width: 0;
+
+      padding: 13px 14px;
+
+      border: 1px solid #ccc;
+
+      border-radius: 9px;
+
+      font-size: 15px;
+
+      outline: none;
+    }
+
+    .chat-input input:focus {
+      border-color: #4285f4;
+    }
+
+    .chat-input button {
+      padding: 12px 20px;
+
+      border: none;
+
+      border-radius: 9px;
+
+      background: #4285f4;
+
+      color: white;
+
+      cursor: pointer;
+
+      font-size: 15px;
+
+      font-weight: 600;
+    }
+
+    .chat-input button:hover {
+      background: #3367d6;
+    }
+
+    .chat-input button:disabled {
+      background: #aaa;
+
+      cursor: not-allowed;
+    }
+
+    /* ================================
+       Memory status
+       ================================ */
+
+    .memory-status {
+      padding: 7px 20px;
+
+      background: #fafafa;
+
+      border-top: 1px solid #eee;
+
+      font-size: 11px;
+
+      color: #777;
+    }
+
+    /* ================================
+       Tablet
+       ================================ */
+
+    @media (max-width: 700px) {
+      body {
+        padding: 0;
+      }
+
+      .chat-container {
+        width: 100%;
+        height: 100vh;
+
+        max-width: none;
+
+        border-radius: 0;
+
+        box-shadow: none;
+      }
+
+      .settings {
+        grid-template-columns:
+          repeat(2, 1fr);
+      }
+
+      .message-content,
+      .sources {
+        max-width: 85%;
+      }
+    }
+
+    /* ================================
+       Mobile
+       ================================ */
+
+    @media (max-width: 480px) {
+      .chat-header {
+        padding: 13px 14px;
+      }
+
+      .header-title {
+        font-size: 17px;
+      }
+
+      .header-subtitle {
+        font-size: 11px;
+      }
+
+      .clear-button {
+        padding: 7px 9px;
+
+        font-size: 11px;
+      }
+
+      .settings {
+        padding: 10px;
+
+        gap: 8px;
+      }
+
+      .setting label {
+        font-size: 11px;
+      }
+
+      .setting input {
+        padding: 6px;
+
+        font-size: 12px;
+      }
+
+      .chat-messages {
+        padding: 14px;
+      }
+
+      .message-content {
+        max-width: 90%;
+
+        font-size: 14px;
+
+        padding: 10px 12px;
+      }
+
+      .sources {
+        max-width: 90%;
+      }
+
+      .chat-input {
+        padding: 10px;
+
+        gap: 7px;
+      }
+
+      .chat-input input {
+        padding: 11px;
+
+        font-size: 14px;
+      }
+
+      .chat-input button {
+        padding: 10px 14px;
+
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="chat-container">
+
+    <!-- ================================
+         Header
+         ================================ -->
+
+    <div class="chat-header">
+
+      <div>
+        <div class="header-title">
+          🤖 Gemini RAG Chatbot
+        </div>
+
+        <div class="header-subtitle">
+          Answers powered by your knowledge base
+        </div>
+      </div>
+
+      <button
+        id="clearMemoryButton"
+        class="clear-button"
+      >
+        Clear Memory
+      </button>
+
+    </div>
+
+    <!-- ================================
+         Gemini Settings
+         ================================ -->
+
+    <div class="settings">
+
+      <div class="setting">
+
+        <label for="temperature">
+          Temperature
+        </label>
+
+        <input
+          type="number"
+          id="temperature"
+          value="0.7"
+          min="0"
+          max="2"
+          step="0.1"
+        />
+
+      </div>
+
+      <div class="setting">
+
+        <label for="maxTokens">
+          Max Tokens
+        </label>
+
+        <input
+          type="number"
+          id="maxTokens"
+          value="500"
+          min="1"
+          max="8192"
+          step="50"
+        />
+
+      </div>
+
+      <div class="setting">
+
+        <label for="topP">
+          Top P
+        </label>
+
+        <input
+          type="number"
+          id="topP"
+          value="0.95"
+          min="0"
+          max="1"
+          step="0.05"
+        />
+
+      </div>
+
+      <div class="setting">
+
+        <label for="topK">
+          Top K
+        </label>
+
+        <input
+          type="number"
+          id="topK"
+          value="40"
+          min="1"
+          max="100"
+          step="1"
+        />
+
+      </div>
+
+    </div>
+
+    <!-- ================================
+         Messages
+         ================================ -->
+
+    <div
+      id="chatMessages"
+      class="chat-messages"
+    >
+
+      <div class="message bot">
+
+        <div class="message-content">
+          Hello! 👋
+
+          I'm a RAG chatbot connected to your
+          fitness knowledge base.
+
+          Ask me something like:
+          "What should I do before starting a workout?"
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================================
+         Memory Status
+         ================================ -->
+
+    <div
+      id="memoryStatus"
+      class="memory-status"
+    >
+      Memory: ON
+    </div>
+
+    <!-- ================================
+         Input
+         ================================ -->
+
+    <div class="chat-input">
+
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Ask something about fitness..."
+        autocomplete="off"
+      />
+
+      <button
+        id="sendButton"
+      >
+        Send
+      </button>
+
+    </div>
+
+  </div>
+
+  <script>
+
+    // =================================
+    // DOM Elements
+    // =================================
+
+    const messageInput =
+      document.getElementById(
+        "messageInput"
+      );
+
+    const sendButton =
+      document.getElementById(
+        "sendButton"
+      );
+
+    const chatMessages =
+      document.getElementById(
+        "chatMessages"
+      );
+
+    const clearMemoryButton =
+      document.getElementById(
+        "clearMemoryButton"
+      );
+
+    const memoryStatus =
+      document.getElementById(
+        "memoryStatus"
+      );
+
+    const temperatureInput =
+      document.getElementById(
+        "temperature"
+      );
+
+    const maxTokensInput =
+      document.getElementById(
+        "maxTokens"
+      );
+
+    const topPInput =
+      document.getElementById(
+        "topP"
+      );
+
+    const topKInput =
+      document.getElementById(
+        "topK"
+      );
+
+
+    // =================================
+    // Session ID
+    // =================================
+
+    let sessionId =
+      localStorage.getItem(
+        "ragSessionId"
+      );
+
+    if (!sessionId) {
+
+      sessionId =
+        "session-" +
+        Date.now() +
+        "-" +
+        Math.random()
+          .toString(36)
+          .substring(2, 9);
+
+      localStorage.setItem(
+        "ragSessionId",
+        sessionId
+      );
+    }
+
+
+    // =================================
+    // Add Message
+    // =================================
+
+    function addMessage(
+      message,
+      type
+    ) {
+
+      const messageDiv =
+        document.createElement(
+          "div"
+        );
+
+      messageDiv.classList.add(
+        "message",
+        type
+      );
+
+      const contentDiv =
+        document.createElement(
+          "div"
+        );
+
+      contentDiv.classList.add(
+        "message-content"
+      );
+
+      contentDiv.textContent =
+        message;
+
+      messageDiv.appendChild(
+        contentDiv
+      );
+
+      chatMessages.appendChild(
+        messageDiv
+      );
+
+      scrollToBottom();
+
+      return contentDiv;
+    }
+
+
+    // =================================
+    // Add Sources
+    // =================================
+
+    function addSources(
+      sources
+    ) {
+
+      if (
+        !sources ||
+        !sources.length
+      ) {
+        return;
+      }
+
+      const wrapper =
+        document.createElement(
+          "div"
+        );
+
+      wrapper.classList.add(
+        "sources"
+      );
+
+      const title =
+        document.createElement(
+          "div"
+        );
+
+      title.classList.add(
+        "sources-title"
+      );
+
+      title.textContent =
+        "📚 Sources";
+
+      wrapper.appendChild(
+        title
+      );
+
+      sources.forEach(
+        (source) => {
+
+          const sourceItem =
+            document.createElement(
+              "div"
+            );
+
+          sourceItem.classList.add(
+            "source-item"
+          );
+
+          sourceItem.textContent =
+            "• " +
+            source.replaceAll(
+              "\\",
+              "/"
+            );
+
+          wrapper.appendChild(
+            sourceItem
+          );
+        }
+      );
+
+      chatMessages.appendChild(
+        wrapper
+      );
+
+      scrollToBottom();
+    }
+
+
+    // =================================
+    // Scroll
+    // =================================
+
+    function scrollToBottom() {
+
+      chatMessages.scrollTop =
+        chatMessages.scrollHeight;
+    }
+
+
+    // =================================
+    // Send Message
+    // =================================
+
+    async function sendMessage() {
+
+      const question =
+        messageInput.value.trim();
+
+      if (!question) {
+        return;
+      }
+
+      // ---------------------------------
+      // Read settings
+      // ---------------------------------
+
+      const temperature =
+        Number(
+          temperatureInput.value
+        );
+
+      const maxTokens =
+        Number(
+          maxTokensInput.value
+        );
+
+      const topP =
+        Number(
+          topPInput.value
+        );
+
+      const topK =
+        Number(
+          topKInput.value
+        );
+
+
+      // ---------------------------------
+      // Display user message
+      // ---------------------------------
+
+      addMessage(
+        question,
+        "user"
+      );
+
+
+      // ---------------------------------
+      // Clear input
+      // ---------------------------------
+
+      messageInput.value = "";
+
+
+      // ---------------------------------
+      // Disable send
+      // ---------------------------------
+
+      sendButton.disabled = true;
+
+      messageInput.disabled = true;
+
+
+      // ---------------------------------
+      // Show typing
+      // ---------------------------------
+
+      const typingMessage =
+        addMessage(
+          "Gemini is thinking...",
+          "bot"
+        );
+
+      typingMessage.classList.add(
+        "typing"
+      );
+
+
+      try {
+
+        // ---------------------------------
+        // Call RAG API
+        // ---------------------------------
+
+        const response =
+          await fetch(
+            "/api/chat",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify({
+
+                question,
+
+                sessionId,
+
+                memory: true,
+
+                temperature,
+
+                maxTokens,
+
+                topP,
+
+                topK
+
+              })
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        // ---------------------------------
+        // Remove typing
+        // ---------------------------------
+
+        if (
+          typingMessage.parentElement
+        ) {
+
+          typingMessage
+            .parentElement
+            .remove();
+
+        }
+
+
+        // ---------------------------------
+        // Handle error
+        // ---------------------------------
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            "Something went wrong."
+          );
+
+        }
+
+
+        // ---------------------------------
+        // Display answer
+        // ---------------------------------
+
+        addMessage(
+          data.answer,
+          "bot"
+        );
+
+
+        // ---------------------------------
+        // Display sources
+        // ---------------------------------
+
+        addSources(
+          data.sources
+        );
+
+
+        // ---------------------------------
+        // Update memory status
+        // ---------------------------------
+
+        memoryStatus.textContent =
+          "Memory: ON • Session: " +
+          data.sessionId;
+
+
+      } catch (error) {
+
+        // ---------------------------------
+        // Remove typing
+        // ---------------------------------
+
+        if (
+          typingMessage.parentElement
+        ) {
+
+          typingMessage
+            .parentElement
+            .remove();
+
+        }
+
+
+        // ---------------------------------
+        // Display error
+        // ---------------------------------
+
+        addMessage(
+          "Error: " +
+          error.message,
+          "bot"
+        );
+
+      } finally {
+
+        // ---------------------------------
+        // Enable controls
+        // ---------------------------------
+
+        sendButton.disabled =
+          false;
+
+        messageInput.disabled =
+          false;
+
+        messageInput.focus();
+
+      }
+    }
+
+
+    // =================================
+    // Clear Memory
+    // =================================
+
+    async function clearMemory() {
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/chat/clear-memory",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify({
+                sessionId
+              })
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            "Failed to clear memory."
+          );
+
+        }
+
+
+        // Clear messages
+        chatMessages.innerHTML = "";
+
+
+        // Add welcome message
+        addMessage(
+          "Memory cleared. 🔄\n\n" +
+          "Let's start a new conversation!",
+          "bot"
+        );
+
+
+        memoryStatus.textContent =
+          "Memory: ON • New conversation";
+
+
+        messageInput.focus();
+
+      } catch (error) {
+
+        addMessage(
+          "Error clearing memory: " +
+          error.message,
+          "bot"
+        );
+
+      }
+    }
+
+
+    // =================================
+    // Event Listeners
+    // =================================
+
+    sendButton.addEventListener(
+      "click",
+      sendMessage
+    );
+
+
+    clearMemoryButton.addEventListener(
+      "click",
+      clearMemory
+    );
+
+
+    messageInput.addEventListener(
+      "keydown",
+      (event) => {
+
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+
+          event.preventDefault();
+
+          sendMessage();
+
+        }
+
+      }
+    );
+
+
+    // =================================
+    // Initial focus
+    // =================================
+
+    messageInput.focus();
+
+  </script>
+
+</body>
+</html>
